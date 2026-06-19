@@ -5,10 +5,16 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+        <UserSecretsId>8b6848b2-c224-4195-bd9b-86b7f84e9a83</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Binance.Net" Version="12.14.0" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.6" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.6">
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
     </ItemGroup>
 
 </Project>

@@ -1,8 +1,26 @@
 using GridCalc.App.Components;
+using GridCalc.App.CryptoExchange;
+using GridCalc.App.Data;
+using GridCalc.App.Data.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configuration: User Secrets (local dev) → Environment Variables (CI/CD) → appsettings.json
+// In GitHub Actions, set secrets as env vars using double underscore for nested keys (e.g. MyApi__Key)
+builder.Configuration
+    .AddUserSecrets<Program>(optional: true)
+    .AddEnvironmentVariables();
+
 // Add services to the container.
+builder.Services.AddDbContextFactory<GridCalcDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=gridcalc.db"));
+
+builder.Services.AddSingleton<ExchangeRepository>();
+builder.Services.AddSingleton<IExchange, BinanceExchange>();
+
+builder.Services.AddHostedService<TradeCollectorService>();
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
