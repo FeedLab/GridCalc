@@ -38,6 +38,56 @@ namespace GridCalc.App.Migrations
 
                     b.ToTable("Exchanges");
                 });
+
+            modelBuilder.Entity("GridCalc.App.Data.Entities.SymbolRecord", b =>
+                {
+                    b.Property<Guid>("ExchangeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BaseAsset")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("QuoteAsset")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Symbol")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ExchangeId", "BaseAsset", "QuoteAsset");
+
+                    b.ToTable("Symbols");
+                });
+
+            modelBuilder.Entity("GridCalc.App.Data.Entities.TradeRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ExchangeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Symbol")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Trades");
+                });
 #pragma warning restore 612, 618
         }
     }

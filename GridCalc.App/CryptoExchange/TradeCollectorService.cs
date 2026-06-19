@@ -15,6 +15,8 @@ public class TradeCollectorService : BackgroundService
     {
         _logger.LogInformation("TradeCollectorService started at: {time}", DateTimeOffset.Now);
 
+        
+        
         foreach (var exchange in exchanges)
         {
             await exchange.Initialize();

@@ -1,6 +1,7 @@
 using GridCalc.App.Components;
 using GridCalc.App.CryptoExchange;
 using GridCalc.App.Data;
+using GridCalc.App.Data.Entities;
 using GridCalc.App.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,8 @@ builder.Services.AddDbContextFactory<GridCalcDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=gridcalc.db"));
 
 builder.Services.AddSingleton<ExchangeRepository>();
+builder.Services.AddSingleton<SymbolRepository>();
+builder.Services.AddSingleton<TradeRepository>();
 builder.Services.AddSingleton<IExchange, BinanceExchange>();
 
 builder.Services.AddHostedService<TradeCollectorService>();
