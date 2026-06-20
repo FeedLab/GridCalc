@@ -60,6 +60,7 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./publish/        # <-- add trailing slash
-          server-dir: /wwwroot/        # <-- also good practice to end with /
+          local-dir: ./publish/
+          server-dir: /wwwroot/
+          dangerous-clean-slate: true
 
