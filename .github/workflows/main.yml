@@ -1,0 +1,42 @@
+name: Build and Deploy to MonsterASP
+
+on:
+  push:
+    branches:
+      - main   # auto-deploy when pushing to main
+  workflow_dispatch:   # manual trigger from GitHub Actions UI
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Build step for .NET 10 project
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build project
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Publish project
+        run: dotnet publish -c Release -o ./publish
+
+      # Deploy only if build & publish succeed
+      - name: Deploy to MonsterASP via FTP
+        if: success()
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}          # 21 for FTP, 22 for SFTP
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./publish
+          server-dir: /wwwroot                   # adjust to your hosting root
