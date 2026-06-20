@@ -28,12 +28,21 @@ jobs:
       - name: Publish project
         run: dotnet publish -c Release -o ./publish
 
+      # 🔎 Test FTP connection before deploy
+      - name: Test FTP connection
+        run: |
+          echo "open ${{ secrets.FTP_SERVER }} ${{ secrets.FTP_PORT }}" > ftp.txt
+          echo "user ${{ secrets.FTP_USERNAME }} ${{ secrets.FTP_PASSWORD }}" >> ftp.txt
+          echo "quit" >> ftp.txt
+          ftp -n < ftp.txt
+
+      # 🚀 Deploy only if build & test succeed
       - name: Deploy to MonsterASP via FTP
         if: success()
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
-          port: ${{ secrets.FTP_PORT }}          # 21 for FTP, 22 for SFTP
+          port: ${{ secrets.FTP_PORT }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./publish
