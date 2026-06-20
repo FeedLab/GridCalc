@@ -4,21 +4,24 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch:   # allows manual trigger from GitHub Actions UI
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout source
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Setup .NET
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
+      # Build steps
       - name: Restore dependencies
         run: dotnet restore
 
