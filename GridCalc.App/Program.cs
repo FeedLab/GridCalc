@@ -24,8 +24,14 @@ builder.Host.UseSerilog((context, services, configuration) =>
 });
 
 // Add services
+// builder.Services.AddDbContextFactory<GridCalcDbContext>(options =>
+//     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=gridcalc.db"));
+
 builder.Services.AddDbContextFactory<GridCalcDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=gridcalc.db"));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? "Server=localhost;Database=GridCalc;Trusted_Connection=True;TrustServerCertificate=True"));
+
 
 builder.Services.AddSingleton<ExchangeRepository>();
 builder.Services.AddSingleton<SymbolRepository>();
@@ -38,6 +44,21 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 var app = builder.Build();
+
+// Create DB if not exists and apply migrations
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<GridCalcDbContext>();
+    
+    // var conn = db.Database.GetDbConnection();
+    //
+    // Console.WriteLine("Connection string: " + conn.ConnectionString);
+    // Console.WriteLine("Database: " + conn.Database);
+    // Console.WriteLine("DataSource: " + conn.DataSource);
+    // Console.WriteLine("ServerVersion: " + conn.ServerVersion);
+    
+    db.Database.Migrate();
+}
 
 // Middleware pipeline
 if (!app.Environment.IsDevelopment())

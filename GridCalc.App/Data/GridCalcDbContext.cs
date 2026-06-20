@@ -24,6 +24,12 @@ public class GridCalcDbContext(DbContextOptions<GridCalcDbContext> options) : Db
         modelBuilder.Entity<TradeRecord>(entity =>
         {
             entity.HasKey(t => t.Id);
+            
+            entity.Property(e => e.Price)
+                .HasPrecision(18, 8);   // 18 digits total, 8 after decimal
+
+            entity.Property(e => e.Quantity)
+                .HasPrecision(18, 8);
         });
     }
 }

@@ -8,8 +8,7 @@
         "applicationUrl": "http://localhost:5295",
         "environmentVariables": {
           "ASPNETCORE_ENVIRONMENT": "Development",
-          "BINANCE_EXCHANGE_KEY": "T9zaylQnmZTLVySIO9s4as0IKUgc79EDvP3J13UrdkF9dZdrEBKUj1GqwLCuuPZN",
-          "BINANCE_EXCHANGE_SECRET": "VTozBfIrzDYChBbS13XTthVjy0NxCHVllkR2wBMWUK0GzpzP2EHJZYGKiaLU0oqW"
+          "ConnectionStrings__DefaultConnection": "Server=localhost,1433;Database=GridCalc;User Id=sa;Password=Bondegatan#16b;TrustServerCertificate=True;"
         }
       },
       "https": {
@@ -19,8 +18,7 @@
         "applicationUrl": "https://localhost:7252;http://localhost:5295",
         "environmentVariables": {
           "ASPNETCORE_ENVIRONMENT": "Development",
-          "BINANCE_EXCHANGE_KEY": "T9zaylQnmZTLVySIO9s4as0IKUgc79EDvP3J13UrdkF9dZdrEBKUj1GqwLCuuPZN",
-          "BINANCE_EXCHANGE_SECRET": "VTozBfIrzDYChBbS13XTthVjy0NxCHVllkR2wBMWUK0GzpzP2EHJZYGKiaLU0oqW"
+          "ConnectionStrings__DefaultConnection": "Server=localhost,1433;Database=GridCalc;User Id=sa;Password=Bondegatan#16b;TrustServerCertificate=True;"
         }
       }
     }
