@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch:   # allows manual trigger from GitHub Actions UI
 
 jobs:
   build-and-deploy:
@@ -30,6 +30,18 @@ jobs:
 
       - name: Publish project
         run: dotnet publish -c Release -o ./publish
+
+      # 🔎 Debug print environment variables
+      - name: Debug environment variables
+        run: |
+          echo "FTP_SERVER: ${{ secrets.FTP_SERVER }}"
+          echo "FTP_PORT: ${{ secrets.FTP_PORT }}"
+          echo "FTP_USERNAME: ${{ secrets.FTP_USERNAME }}"
+          if [ -z "${{ secrets.FTP_PASSWORD }}" ]; then
+            echo "FTP_PASSWORD is NOT set!"
+          else
+            echo "FTP_PASSWORD is set (value hidden)"
+          fi
 
       # 🔎 Test FTP connection before deploy
       - name: Test FTP connection
