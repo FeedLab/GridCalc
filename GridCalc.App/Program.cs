@@ -49,16 +49,18 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<GridCalcDbContext>();
-    
-    // var conn = db.Database.GetDbConnection();
-    //
-    // Console.WriteLine("Connection string: " + conn.ConnectionString);
-    // Console.WriteLine("Database: " + conn.Database);
-    // Console.WriteLine("DataSource: " + conn.DataSource);
-    // Console.WriteLine("ServerVersion: " + conn.ServerVersion);
-    
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    var conn = db.Database.GetDbConnection();
+
+    logger.LogInformation("EF Core connection string: {ConnectionString}", conn.ConnectionString);
+    logger.LogInformation("Database: {Database}", conn.Database);
+    logger.LogInformation("DataSource: {DataSource}", conn.DataSource);
+    // logger.LogInformation("ServerVersion: {ServerVersion}", conn.ServerVersion);
+
     db.Database.Migrate();
 }
+
 
 // Middleware pipeline
 if (!app.Environment.IsDevelopment())
