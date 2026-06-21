@@ -1,8 +1,14 @@
 ﻿@page "/exchange"
-@rendermode InteractiveServer
+@using GridCalc.App.CryptoExchange
+@using GridCalc.App.Data.Entities
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 
 <PageTitle>Exchange</PageTitle>
 
 <h1>Counter</h1>
+<SfDropDownList  TValue="string" TItem="ExchangeRecord" PopupHeight="230px" Placeholder="Select a color" DataSource="@exchanges" @bind-Value="@selectedExchangeId">
+    <DropDownListFieldSettings Text="Name" Value="Id"/>
+</SfDropDownList>
 
+<SfButton IsPrimary="true" @onclick="CalculateGridTrade">Primary</SfButton>

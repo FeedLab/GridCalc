@@ -4,6 +4,9 @@ using GridCalc.App.Data;
 using GridCalc.App.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Syncfusion.Blazor;
+
+Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1JHaF5cWWdCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdlWXlccHZVRmhfWUB+WEFWYEo=");
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +19,7 @@ builder.Configuration
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     configuration
+        .MinimumLevel.Debug()
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
@@ -32,6 +36,7 @@ builder.Services.AddDbContextFactory<GridCalcDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")
         ?? "Server=localhost;Database=GridCalc;Trusted_Connection=True;TrustServerCertificate=True"));
 
+builder.Services.AddSyncfusionBlazor();
 
 builder.Services.AddSingleton<ExchangeRepository>();
 builder.Services.AddSingleton<SymbolRepository>();

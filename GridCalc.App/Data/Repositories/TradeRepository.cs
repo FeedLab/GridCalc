@@ -14,6 +14,15 @@ public class TradeRepository(ILogger<TradeRepository> logger, IDbContextFactory<
         await db.SaveChangesAsync();
     }
 
+    public async Task<List<TradeRecord>> GetBySymbolAsync(Guid exchangeId, string symbol)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync();
+        return await db.Trades
+            .Where(t => t.ExchangeId == exchangeId && t.Symbol == symbol)
+            .OrderBy(o => o.Timestamp)
+            .ToListAsync();
+    }
+
     public async Task<List<TradeRecord>> GetBySymbolAsync(string symbol)
     {
         await using var db = await dbFactory.CreateDbContextAsync();

@@ -9,5 +9,13 @@
       <jdbc-url>Server=localhost,1433;Database=GridCalc;User Id=sa;Password=Bondegatan#16b;TrustServerCertificate=True;</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="Microsoft SQL Server (JetBrains)" uuid="4d8ed776-b34b-4bd7-9dc4-9926e2875c5e">
+      <driver-ref>sqlserver.jb</driver-ref>
+      <synchronize>true</synchronize>
+      <configured-by-url>true</configured-by-url>
+      <jdbc-driver>com.jetbrains.jdbc.sqlserver.SqlServerDriver</jdbc-driver>
+      <jdbc-url>Server=db56722.public.databaseasp.net; Database=db56722; User Id=db56722; Password=3Po=#5NqtG-7; Encrypt=True; TrustServerCertificate=True; MultipleActiveResultSets=True;</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>
