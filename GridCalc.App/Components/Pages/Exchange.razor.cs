@@ -13,16 +13,18 @@ public partial class Exchange
     private readonly IExchange binanceExchange;
     private List<ExchangeRecord> exchanges;
     private string selectedExchangeId;
+    private int arbitrages = 0;
+    private decimal gridStepSize = 50;
 
-    public Exchange(ILogger<Exchange> logger, TradeRepository tradeRepository, ExchangeRepository exchangeRepository, IExchange binanceExchange)
+    public Exchange(ILogger<Exchange> logger, TradeRepository tradeRepository, ExchangeRepository exchangeRepository,
+        IExchange binanceExchange)
     {
         this.logger = logger;
         this.tradeRepository = tradeRepository;
         this.exchangeRepository = exchangeRepository;
         this.binanceExchange = binanceExchange;
-
     }
-    
+
     protected override async Task OnInitializedAsync()
     {
         exchanges = await exchangeRepository.GetAllAsync();
@@ -36,11 +38,10 @@ public partial class Exchange
     private async Task CalculateGridTrade()
     {
         var trades = await tradeRepository.GetBySymbolAsync(Guid.Parse(selectedExchangeId), "BTCUSDT");
-        
+
         var startPrice = trades.First().Price;
-        var tickSize = 50m;
-        
-        CalculateNumberOfTrades(startPrice, trades, tickSize);
+
+        CalculateNumberOfTrades(startPrice, trades, gridStepSize);
     }
 
     private void CalculateNumberOfTrades(decimal startPrice, List<TradeRecord> trades, decimal tickSize)
@@ -54,14 +55,18 @@ public partial class Exchange
             {
                 currentTradePrice += tickSize;
                 numberOfGridTrade++;
-                logger.LogDebug("GridTrade up: {numberOfGridTrade}, {tradePrice}", numberOfGridTrade, currentTradePrice);
+                logger.LogDebug("GridTrade up: {numberOfGridTrade}, {tradePrice}", numberOfGridTrade,
+                    currentTradePrice);
             }
-            
+
             while (trade.Price < currentTradePrice - tickSize)
             {
                 currentTradePrice -= tickSize;
-                logger.LogDebug("GridTrade down: {numberOfGridTrade}, {tradePrice}", numberOfGridTrade, currentTradePrice);
+                logger.LogDebug("GridTrade down: {numberOfGridTrade}, {tradePrice}", numberOfGridTrade,
+                    currentTradePrice);
             }
         }
+
+        arbitrages = numberOfGridTrade;
     }
 }
