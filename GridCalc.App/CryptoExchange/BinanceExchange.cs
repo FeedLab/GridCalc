@@ -22,10 +22,11 @@ public class BinanceExchange : IExchange
     private BinanceSocketClient? exchangeSocketClient;
 
 
-    private readonly string key;
-    private readonly string secret;
+    // private readonly string key;
+    // private readonly string secret;
     public ExchangeRecord ExchangeData { get; private set; }
-    private List<SymbolRecord> listOfSymbols = [];
+    private readonly List<SymbolRecord> listOfSymbols = [];
+    private readonly Guid exchangeId = Guid.Parse("e8063a5f-5c10-4476-9748-191a05b2d4e9");
 
     public BinanceExchange(ILogger<BinanceExchange> logger, IConfiguration config,
         ExchangeRepository exchangeRepository, SymbolRepository symbolRepository, TradeRepository tradeRepository)
@@ -35,16 +36,16 @@ public class BinanceExchange : IExchange
         this.symbolRepository = symbolRepository;
         this.tradeRepository = tradeRepository;
 
-        key = config["BINANCE_EXCHANGE_KEY"] ?? throw new InvalidOperationException("Exchange Key can not be null");
-        secret = config["BINANCE_EXCHANGE_SECRET"] ??
-                 throw new InvalidOperationException("Exchange Secret can not be null");
+        // key = config["BINANCE_EXCHANGE_KEY"] ?? throw new InvalidOperationException("Exchange Key can not be null");
+        // secret = config["BINANCE_EXCHANGE_SECRET"] ??
+        //          throw new InvalidOperationException("Exchange Secret can not be null");
 
         IsConnected = false;
         HasKeyAndSecretLoaded = true;
 
         ExchangeData = new ExchangeRecord
         (
-            Guid.Parse("e8063a5f-5c10-4476-9748-191a05b2d4e9"),
+            exchangeId,
             "Binance",
             "Binance Exchange",
             DateTime.UtcNow
@@ -58,20 +59,23 @@ public class BinanceExchange : IExchange
         await CreateExchangeRecord();
         await CreateSymbolRecords();
 
-        exchangeClient = new BinanceRestClient(options =>
-        {
-            options.ApiCredentials = new BinanceCredentials(key, secret);
-            options.Environment = BinanceEnvironment.Testnet;
-            options.OutputOriginalData = true;
-        });
+        // exchangeClient = new BinanceRestClient(options =>
+        // {
+        //     options.ApiCredentials = new BinanceCredentials(key, secret);
+        //     options.Environment = BinanceEnvironment.Testnet;
+        //     options.OutputOriginalData = true;
+        // });
+        //
+        // exchangeSocketClient = new BinanceSocketClient(options =>
+        // {
+        //     options.ApiCredentials = new BinanceCredentials(key, secret);
+        //     options.Environment = BinanceEnvironment.Testnet;
+        //     options.OutputOriginalData = true;
+        // });
 
-        exchangeSocketClient = new BinanceSocketClient(options =>
-        {
-            options.ApiCredentials = new BinanceCredentials(key, secret);
-            options.Environment = BinanceEnvironment.Testnet;
-            options.OutputOriginalData = true;
-        });
-
+        exchangeClient = new BinanceRestClient();
+        exchangeSocketClient = new BinanceSocketClient();
+        
         if (exchangeClient == null || exchangeSocketClient == null)
         {
             IsConnected = false;
@@ -85,11 +89,6 @@ public class BinanceExchange : IExchange
             {
                 logger.LogDebug($"{data.Data.TradeTime}: {data.Data.Symbol} - {data.Data.Quantity} @ {data.Data.Price}");
 
-                if (ExchangeData is null)
-                {
-                    logger.LogError("Exchange Record can not be null");
-                    return;
-                }
                 var trade = new TradeRecord(
                     Guid.CreateVersion7(),
                     ExchangeData!.Id,
@@ -98,7 +97,7 @@ public class BinanceExchange : IExchange
                     data.Data.Quantity,
                     data.Data.TradeTime);
 
-                // _ = tradeRepository.AddAsync(trade);
+                _ = tradeRepository.AddAsync(trade);
             });
 
         if (!subscription.Success)

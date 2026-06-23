@@ -19,13 +19,11 @@ builder.Configuration
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     configuration
-        .MinimumLevel.Debug()
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
-        .Enrich.FromLogContext()
-        .WriteTo.Console()
-        .WriteTo.File("Logs/GridCalcApp.log", rollingInterval: RollingInterval.Day);
+        .Enrich.FromLogContext();
 });
+
 
 // Add services
 // builder.Services.AddDbContextFactory<GridCalcDbContext>(options =>
