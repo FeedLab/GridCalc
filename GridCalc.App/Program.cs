@@ -40,6 +40,7 @@ builder.Services.AddSingleton<ExchangeRepository>();
 builder.Services.AddSingleton<SymbolRepository>();
 builder.Services.AddSingleton<TradeRepository>();
 builder.Services.AddSingleton<IExchange, BinanceExchange>();
+builder.Services.AddSingleton<GridTradeCache>();
 
 builder.Services.AddHostedService<TradeCollectorService>();
 
