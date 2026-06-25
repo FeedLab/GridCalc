@@ -12,10 +12,9 @@
     <DropDownListFieldSettings Text="Name" Value="Id"/>
 </SfDropDownList>
 
-<SfNumericTextBox TValue="decimal" @bind-Value="@gridStepSize" CssClass="e-style" Placeholder="Enter grid step size" FloatLabelType="@FloatLabelType.Always"></SfNumericTextBox>
+<SfNumericTextBox TValue="int" @bind-Value="@numberOfDays" CssClass="e-style" Placeholder="Backtest days" FloatLabelType="@FloatLabelType.Always"></SfNumericTextBox>
 <SfNumericTextBox TValue="decimal"  Min=0.001m Max=0.1m  @bind-Value="@gridStepFee" CssClass="e-style" Placeholder="Enter fee" FloatLabelType="@FloatLabelType.Always"></SfNumericTextBox>
 
-<SfButton IsPrimary="true" @onclick="CalculateGridTrade">Primary</SfButton>
 <SfButton IsPrimary="false" @onclick="AutoCalculateGridTrade">Auto Calculation</SfButton>
 
 <h1>Number of arbitrage: @arbitrages</h1>

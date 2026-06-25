@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using GridCalc.App.Components;
 using GridCalc.App.CryptoExchange;
 using GridCalc.App.Data;
@@ -36,11 +37,13 @@ builder.Services.AddDbContextFactory<GridCalcDbContext>(options =>
 
 builder.Services.AddSyncfusionBlazor();
 
+builder.Services.AddSingleton<Candle1MinutesRepository>();
 builder.Services.AddSingleton<ExchangeRepository>();
 builder.Services.AddSingleton<SymbolRepository>();
 builder.Services.AddSingleton<TradeRepository>();
 builder.Services.AddSingleton<IExchange, BinanceExchange>();
 builder.Services.AddSingleton<GridTradeCache>();
+builder.Services.AddSingleton<ConcurrentDictionary<string, CandleCache1Minutes>>();
 
 builder.Services.AddHostedService<TradeCollectorService>();
 

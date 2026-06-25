@@ -1,6 +1,7 @@
 using Binance.Net;
 using Binance.Net.Clients;
 using Binance.Net.Interfaces.Clients.SpotApi;
+using ccxt;
 using GridCalc.App.Data.Entities;
 using GridCalc.App.Data.Repositories;
 
@@ -9,6 +10,7 @@ namespace GridCalc.App.CryptoExchange;
 public interface IExchange
 {
     Task Initialize();
+    Task ImportCandles();
     ExchangeRecord ExchangeData { get; }
 }
 
@@ -18,6 +20,7 @@ public class BinanceExchange : IExchange
     private readonly ExchangeRepository exchangeRepository;
     private readonly SymbolRepository symbolRepository;
     private readonly TradeRepository tradeRepository;
+    private readonly Candle1MinutesRepository candle1MinutesRepository;
     private BinanceRestClient? exchangeClient;
     private BinanceSocketClient? exchangeSocketClient;
 
@@ -29,16 +32,13 @@ public class BinanceExchange : IExchange
     private readonly Guid exchangeId = Guid.Parse("e8063a5f-5c10-4476-9748-191a05b2d4e9");
 
     public BinanceExchange(ILogger<BinanceExchange> logger, IConfiguration config,
-        ExchangeRepository exchangeRepository, SymbolRepository symbolRepository, TradeRepository tradeRepository)
+        ExchangeRepository exchangeRepository, SymbolRepository symbolRepository, TradeRepository tradeRepository, Candle1MinutesRepository candle1MinutesRepository)
     {
         this.logger = logger;
         this.exchangeRepository = exchangeRepository;
         this.symbolRepository = symbolRepository;
         this.tradeRepository = tradeRepository;
-
-        // key = config["BINANCE_EXCHANGE_KEY"] ?? throw new InvalidOperationException("Exchange Key can not be null");
-        // secret = config["BINANCE_EXCHANGE_SECRET"] ??
-        //          throw new InvalidOperationException("Exchange Secret can not be null");
+        this.candle1MinutesRepository = candle1MinutesRepository;
 
         IsConnected = false;
         HasKeyAndSecretLoaded = true;
@@ -59,65 +59,63 @@ public class BinanceExchange : IExchange
         await CreateExchangeRecord();
         await CreateSymbolRecords();
 
-        // exchangeClient = new BinanceRestClient(options =>
-        // {
-        //     options.ApiCredentials = new BinanceCredentials(key, secret);
-        //     options.Environment = BinanceEnvironment.Testnet;
-        //     options.OutputOriginalData = true;
-        // });
-        //
-        // exchangeSocketClient = new BinanceSocketClient(options =>
-        // {
-        //     options.ApiCredentials = new BinanceCredentials(key, secret);
-        //     options.Environment = BinanceEnvironment.Testnet;
-        //     options.OutputOriginalData = true;
-        // });
-
-        exchangeClient = new BinanceRestClient();
-        exchangeSocketClient = new BinanceSocketClient();
-        
-        if (exchangeClient == null || exchangeSocketClient == null)
-        {
-            IsConnected = false;
-
-            throw new InvalidOperationException("Exchange Client or Socket Client can not be null");
-        }
-
-        var listOfSymbolPairs = listOfSymbols.Select(s => s.Symbol).ToList();
-        var subscription = await exchangeSocketClient.SpotApi.ExchangeData.SubscribeToTradeUpdatesAsync(listOfSymbolPairs,
-            data =>
-            {
-                logger.LogDebug($"{data.Data.TradeTime}: {data.Data.Symbol} - {data.Data.Quantity} @ {data.Data.Price}");
-
-                var trade = new TradeRecord(
-                    Guid.CreateVersion7(),
-                    ExchangeData!.Id,
-                    data.Data.Symbol,
-                    data.Data.Price,
-                    data.Data.Quantity,
-                    data.Data.TradeTime);
-
-                _ = tradeRepository.AddAsync(trade);
-            });
-
-        if (!subscription.Success)
-        {
-            logger.LogError("Failed to sub: " + subscription.Error);
-            IsConnected = false;
-            return;
-        }
-
         IsConnected = true;
     }
 
+    public async Task ImportCandles()
+    {
+        foreach (var symbol in listOfSymbols)
+        {
+            var candle = await candle1MinutesRepository.GetLatestByExchangeAndSymbolAsync(ExchangeData.Id, symbol.Symbol);
+
+            var timestamp = 0L;
+            
+            if (candle is null)
+            {
+                timestamp = DateTimeOffset.UtcNow.AddDays(-90).ToUnixTimeMilliseconds();
+            }
+            else
+            {
+                var utcTimestamp = DateTime.SpecifyKind(candle.Timestamp, DateTimeKind.Utc);
+                var unixMilliseconds = new DateTimeOffset(utcTimestamp).ToUnixTimeMilliseconds();
+
+                timestamp = unixMilliseconds;
+            }
+
+            await ImportCandles(symbol, timestamp);
+        }
+    }
+    
+    public async Task ImportCandles(SymbolRecord symbols, long since)
+    {
+        var candles = await GetCandles(since, $"{symbols.BaseAsset}/{symbols.QuoteAsset}");
+
+        var candleRecords = candles.Select(s => new CandleRecord(
+            Guid.CreateVersion7(),
+            ExchangeData.Id,
+            symbols.Symbol,
+            (decimal)(s.open ?? 0),   // default to 0 if null
+            (decimal)(s.close ?? 0),
+            (decimal)(s.high ?? 0),
+            (decimal)(s.low ?? 0),
+            (decimal)(s.volume ?? 0),
+            s.timestamp.HasValue
+                ? DateTimeOffset.FromUnixTimeMilliseconds(s.timestamp.Value).UtcDateTime
+                : DateTime.UtcNow
+        )).ToList();
+
+        
+        await candle1MinutesRepository.AddAsync(candleRecords);
+    }
+    
     private async Task CreateSymbolRecords()
     {
         if(ExchangeData is null)
             throw new InvalidOperationException("Exchange Record can not be null");
         
-        var symbolBtcUsdt = new SymbolRecord(ExchangeData.Id, "BTCUSDT","BTC", "USDT", DateTime.UtcNow);
-        var symbolEthUsdt = new SymbolRecord(ExchangeData.Id, "ETHUSDT","ETH", "USDT", DateTime.UtcNow);
-        var symbolAdaUsdt = new SymbolRecord(ExchangeData.Id, "ADAUSDT","ADA", "USDT", DateTime.UtcNow);
+        var symbolBtcUsdt = new SymbolRecord(ExchangeData.Id, "BTC/USDT","BTC", "USDT", DateTime.UtcNow);
+        var symbolEthUsdt = new SymbolRecord(ExchangeData.Id, "ETH/USDT","ETH", "USDT", DateTime.UtcNow);
+        var symbolAdaUsdt = new SymbolRecord(ExchangeData.Id, "ADA/USDT","ADA", "USDT", DateTime.UtcNow);
         
         listOfSymbols.AddRange(symbolBtcUsdt, symbolEthUsdt, symbolAdaUsdt);
         
@@ -127,6 +125,50 @@ public class BinanceExchange : IExchange
     private async Task CreateExchangeRecord()
     {
         await exchangeRepository.UpsertAsync(ExchangeData);
+    }
+    
+    private async Task<List<OHLCV>> GetCandles(long startDate, string symbol)
+    {
+        var binance = new ccxt.binance();
+
+        var allCandles = new List<ccxt.OHLCV>();
+
+        var since = startDate;
+        var now = binance.milliseconds();
+
+        while (since < now)
+        {
+            var candles = await binance.FetchOHLCV(symbol, "1m", since, 1000);
+
+            if (candles.Count == 0)
+                break;
+
+            allCandles.AddRange(candles);
+
+            var last = candles[^1];
+            
+            if (last.timestamp.HasValue)
+            {
+                since = last.timestamp.Value + 60_000;
+            }
+            else
+            {
+                break;
+            }
+
+            var timestampLong = candles.Last().timestamp;
+            var timestamp = timestampLong.HasValue
+                ? DateTimeOffset.FromUnixTimeMilliseconds(timestampLong.Value).UtcDateTime
+                : DateTime.UtcNow;
+
+            
+            Console.WriteLine($"Fetched {timestamp}-{candles.Count}, total {allCandles.Count}");
+        }
+
+
+        Console.WriteLine($"Final total candles: {allCandles.Count}");
+
+        return allCandles;
     }
 
     public bool IsConnected { get; set; }

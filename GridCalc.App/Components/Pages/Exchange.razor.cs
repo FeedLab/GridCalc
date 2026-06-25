@@ -11,19 +11,21 @@ public partial class Exchange
     private readonly TradeRepository tradeRepository;
     private readonly ExchangeRepository exchangeRepository;
     private readonly IExchange binanceExchange;
+    private readonly Candle1MinutesRepository candle1MinutesRepository;
     private List<ExchangeRecord> exchanges;
     private string selectedExchangeId;
     private int arbitrages = 0;
-    private decimal gridStepSize = 50;
-    private decimal gridStepFee = 0.02m / 100; // 0.02%
+    private int  numberOfDays = 7;
+    private decimal gridStepFee = 0.02m; // 0.02%
 
     public Exchange(ILogger<Exchange> logger, TradeRepository tradeRepository, ExchangeRepository exchangeRepository,
-        IExchange binanceExchange)
+        IExchange binanceExchange, Candle1MinutesRepository candle1MinutesRepository)
     {
         this.logger = logger;
         this.tradeRepository = tradeRepository;
         this.exchangeRepository = exchangeRepository;
         this.binanceExchange = binanceExchange;
+        this.candle1MinutesRepository = candle1MinutesRepository;
     }
 
     protected override async Task OnInitializedAsync()
@@ -39,12 +41,12 @@ public partial class Exchange
 
     private async Task AutoCalculateGridTrade()
     {
-        var startTime = DateTime.UtcNow.AddDays(-1);
-        var trades = await tradeRepository.GetBySymbolAsync(Guid.Parse(selectedExchangeId), startTime, "BTCUSDT");
+        var startTime = DateTime.UtcNow.AddDays(-numberOfDays);
+        var trades = await candle1MinutesRepository.GetByExchangeAndSymbolAsync(Guid.Parse(selectedExchangeId), startTime, "BTC/USDT");
 
-        var startPrice = trades.First().Price;
-        var spreadUpper = startPrice * 1.02m;
-        var spreadLower = startPrice * 0.98m;
+        var startPrice = trades.First().OpenPrice;
+        var spreadUpper = startPrice * 1.01m;
+        var spreadLower = startPrice * 0.99m;
         var spreadSize = (spreadUpper - spreadLower);
         var stepSizeCalc = spreadSize / 150;
         var gridTrades = new Dictionary<decimal, List<GridTrade>>();
@@ -66,7 +68,7 @@ public partial class Exchange
             .Select(x => x.Pair)
             .ToDictionary(x => x.Key, x => x.Value);
 
-        foreach (var gridTrade in tradePairs)
+        foreach (var gridTrade in tradePairs.Take(10))
         {
             var profitSum = gridTrade.Value.Sum(t => t.Profit);
 
@@ -78,32 +80,66 @@ public partial class Exchange
 
         if (tradePairs.Any())
         {
+            var investment = 330m;
             arbitrages = (int)tradePairs.First().Key;
+            
+            var minDate = tradePairs.Values
+                .SelectMany(v => v)          // flatten all lists into one sequence
+                .Min(m => m.TradeTimestamp);
+
+            var maxDate = tradePairs.Values
+                .SelectMany(v => v)          // flatten all lists into one sequence
+                .Max(m => m.TradeTimestamp);
+            
+            logger.LogDebug("Min date: {MinDate}, Max date: {MaxDate}", minDate, maxDate);
+            
+            
+            var minPrice = tradePairs.Values
+                .SelectMany(v => v)          // flatten all lists into one sequence
+                .Min(m => m.PriceBuy);
+
+            var maxPrice = tradePairs.Values
+                .SelectMany(v => v)          // flatten all lists into one sequence
+                .Max(m => m.PriceBuy);
+            
+            var tradingSpread = maxPrice - minPrice;
+            var numberOfArbitrages = (int)tradePairs.First().Key;
+            // var gridStep = tradePairs.First().Value.First().PriceSpread;
+            // var arbitrages = tradingSpread / numberOfArbitrages;
+            var investmentPerStep = investment / arbitrages;
+            
+            
+            logger.LogDebug("Min price: {MinPrice}, Max price: {MaxPrice}", minPrice, maxPrice);
+            
+            foreach (var gridTrade in tradePairs.First().Value. Take(5))
+            {
+                logger.LogDebug(gridTrade.ToString());
+            }
         }
     }
 
-    private async Task CalculateGridTrade()
-    {
-        var trades = await tradeRepository.GetBySymbolAsync(Guid.Parse(selectedExchangeId), "BTCUSDT");
+    // private async Task CalculateGridTrade()
+    // {
+    //     var trades = await tradeRepository.GetBySymbolAsync(Guid.Parse(selectedExchangeId), "BTCUSDT");
+    //
+    //     var startPrice = trades.First().Price;
+    //
+    //     var numberOfGridTrade = CalculateNumberOfTrades(startPrice, trades, gridStepSize);
+    //
+    //     arbitrages = numberOfGridTrade.Count;
+    // }
 
-        var startPrice = trades.First().Price;
-
-        var numberOfGridTrade = CalculateNumberOfTrades(startPrice, trades, gridStepSize);
-
-        arbitrages = numberOfGridTrade.Count;
-    }
-
-    private List<GridTrade> CalculateNumberOfTrades(decimal startPrice, List<TradeRecord> trades, decimal tickSize)
+    private List<GridTrade> CalculateNumberOfTrades(decimal startPrice, List<CandleRecord> trades, decimal tickSize)
     {
         var numberOfGridTrade = 0;
-
+    
         var gridTrades = new List<GridTrade>();
         var currentTradePrice = startPrice;
         foreach (var trade in trades)
         {
-            while (trade.Price > currentTradePrice + tickSize)
+            while (trade.OpenPrice > currentTradePrice + tickSize)
             {
-                var gridTrade = new GridTrade(gridStepFee, currentTradePrice, currentTradePrice + tickSize, tickSize);
+                var gridTrade = new GridTrade(gridStepFee/ 100.0m, currentTradePrice, currentTradePrice + tickSize, tickSize, 0.005m, trade.Timestamp);
                 gridTrades.Add(gridTrade);
 
                 currentTradePrice += tickSize;
@@ -112,7 +148,7 @@ public partial class Exchange
                 //    currentTradePrice);
             }
 
-            while (trade.Price < currentTradePrice - tickSize)
+            while (trade.OpenPrice < currentTradePrice - tickSize)
             {
                 currentTradePrice -= tickSize;
                 //logger.LogDebug("GridTrade down: {numberOfGridTrade}, {tradePrice}", numberOfGridTrade,
@@ -126,8 +162,10 @@ public partial class Exchange
 
 public class GridTrade
 {
-    public GridTrade(decimal fee, decimal priceBuy, decimal priceSell, decimal priceSpread, decimal quantity = 10.0m)
+    public GridTrade(decimal fee, decimal priceBuy, decimal priceSell, decimal priceSpread, decimal quantity,
+        DateTime tradeTimestamp)
     {
+        TradeTimestamp = tradeTimestamp;
         PriceSpread = priceSpread;
         PriceBuy = priceBuy;
         PriceSell = priceSell;
@@ -135,6 +173,15 @@ public class GridTrade
         Fee = fee;
     }
 
+    public override string ToString()
+    {
+        return $"GridTrade: Timestamp={TradeTimestamp} Buy={PriceBuy:F3}, Sell={PriceSell:F3}, Spread={PriceSpread:F3}, " +
+               $"Qty={Quantity}, CostBuy={CostBuy:F3}, IncomeSell={IncomeSell:F3}, " +
+               $"FeeBuy={FeeBuy:F3}, FeeSell={FeeSell:F3}, Profit={Profit:F3} ({ProfitInPercent:P2})";
+    }
+
+    
+    public DateTime TradeTimestamp { get; set; }
     public decimal PriceSpread { get; set; }
 
     public decimal Fee { get; set; }

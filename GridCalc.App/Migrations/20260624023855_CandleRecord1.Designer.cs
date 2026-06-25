@@ -4,6 +4,7 @@ using GridCalc.App.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GridCalc.App.Migrations
 {
     [DbContext(typeof(GridCalcDbContext))]
-    partial class GridCalcDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260624023855_CandleRecord1")]
+    partial class CandleRecord1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -49,7 +52,7 @@ namespace GridCalc.App.Migrations
 
                     b.Property<string>("Symbol")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime2");
@@ -62,9 +65,6 @@ namespace GridCalc.App.Migrations
 
                     b.HasIndex("Timestamp")
                         .HasDatabaseName("IX_CandleRecord1Minutes_Timestamp");
-
-                    b.HasIndex("ExchangeId", "Symbol", "Timestamp")
-                        .HasDatabaseName("IX_CandleRecord_Exchange_Symbol_Timestamp");
 
                     b.ToTable("Candle1Minutes");
                 });

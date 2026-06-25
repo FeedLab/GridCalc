@@ -20,6 +20,7 @@ public class TradeCollectorService : BackgroundService
         foreach (var exchange in exchanges)
         {
             await exchange.Initialize();
+            await exchange.ImportCandles();
         }
         
         while (!stoppingToken.IsCancellationRequested)

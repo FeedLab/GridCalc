@@ -4,6 +4,7 @@ using GridCalc.App.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GridCalc.App.Migrations
 {
     [DbContext(typeof(GridCalcDbContext))]
-    partial class GridCalcDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260624023616_CandleRecord")]
+    partial class CandleRecord
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -29,42 +32,34 @@ namespace GridCalc.App.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("ClosePrice")
-                        .HasPrecision(18, 8)
-                        .HasColumnType("decimal(18,8)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("ExchangeId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("High")
-                        .HasPrecision(18, 8)
-                        .HasColumnType("decimal(18,8)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("Low")
-                        .HasPrecision(18, 8)
-                        .HasColumnType("decimal(18,8)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("OpenPrice")
-                        .HasPrecision(18, 8)
-                        .HasColumnType("decimal(18,8)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Symbol")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("Volume")
-                        .HasPrecision(18, 8)
-                        .HasColumnType("decimal(18,8)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Timestamp")
                         .HasDatabaseName("IX_CandleRecord1Minutes_Timestamp");
-
-                    b.HasIndex("ExchangeId", "Symbol", "Timestamp")
-                        .HasDatabaseName("IX_CandleRecord_Exchange_Symbol_Timestamp");
 
                     b.ToTable("Candle1Minutes");
                 });
